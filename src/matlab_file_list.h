@@ -14,13 +14,13 @@ typedef struct {
 } Matlab_file;
 
 typedef struct {
-    Matlab_file *files;
+    Matlab_file **files;
     size_t count;
     size_t capacity;
 } File_list;
 
 void init_file_list(File_list *list);
 void free_file_list(File_list *list);
-int add_matlab_file(File_list *list, char *file_name, char *content);
+int add_matlab_file(Matlab_file *file, File_list *list);
 
 #endif

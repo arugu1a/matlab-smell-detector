@@ -20,8 +20,8 @@ static int has_m_extension(const char* file_name) {
     return file_extension && strcmp(file_extension, ".m") == 0;
 }
 
-static char* read_file_content(const char *filepath) {
-    FILE *file = fopen(filepath, "rb");
+Matlab_file *read_file(const char *file_path) {
+    FILE *file = fopen(file_path, "rb");
     if (!file) return NULL;
 
     fseek(file, 0, SEEK_END);
@@ -31,7 +31,7 @@ static char* read_file_content(const char *filepath) {
         fclose(file);
         return NULL;
     }
-    
+
     // reset file position
     if (fseek(file, 0, SEEK_SET) != 0) {
         fclose(file);
@@ -44,7 +44,6 @@ static char* read_file_content(const char *filepath) {
         return NULL;
     }
 
-    // read entire file into buffer
     if (fread(buffer, 1, length, file) != (size_t)length) {
         fclose(file);
         free(buffer);
@@ -53,9 +52,30 @@ static char* read_file_content(const char *filepath) {
 
     buffer[length] = '\0';
     fclose(file);
-    return buffer;
+
+    Matlab_file *matlab_file = malloc(sizeof(Matlab_file));
+    if (!matlab_file) {
+        free(buffer);
+        return NULL;
+    } 
+
+    size_t path_length = strlen(file_path);
+    char *path = malloc(path_length+1);
+    if (!path) {
+        free(buffer);
+        free(matlab_file);
+        return NULL;
+    }
+    memcpy(path, file_path, path_length + 1);
+
+    matlab_file->content = buffer;
+    matlab_file->file_name = path;
+
+    return matlab_file;
 }
 
+// TODO: - add some kind of limit to search depth,
+// - add error check for path construction
 int load_files(const char *path, File_list *list) {
     tinydir_dir dir;
     if (tinydir_open(&dir, path) == -1) {
@@ -77,11 +97,20 @@ int load_files(const char *path, File_list *list) {
                 load_files(subpath, list);
             }
         } else if (has_m_extension(file.name)) {
-            char filepath[MAX_PATH_LENGTH];
-            snprintf(filepath, sizeof(filepath), "%s%c%s", path, PATH_SEPARATOR, file.name);
-            char *content = read_file_content(filepath);
+            char file_path[MAX_PATH_LENGTH];
+            snprintf(file_path, sizeof(file_path), "%s%c%s", path, PATH_SEPARATOR, file.name);
 
-            add_matlab_file(list, filepath, content);
+            Matlab_file *matlab_file = read_file(file_path);
+            if (!matlab_file) {
+                fprintf(stderr, "Failed to read file %s.\n", file_path);
+                tinydir_next(&dir);
+                continue;
+            }
+            
+            if (add_matlab_file(matlab_file, list) != 0) {
+                fprintf(stderr, "Failed to allocate additional memory for file list.\n");
+            }
+            
         }
         tinydir_next(&dir);
     }

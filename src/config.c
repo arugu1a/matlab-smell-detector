@@ -13,19 +13,18 @@ int load_config(const char* file_name) {
         return -1;
     }
     
+    // arbitrary value
+    // TODO: define constant
     char line[256];
     char current_section[128] = "";
     
     while (fgets(line, sizeof(line), file)) {
 
-        // replace newline with 0
         line[strcspn(line, "\n")] = '\0';
-        // skip comments and empty lines
         if (line[0] == '\0' || line[0] == '#') {
             continue;
         }
         
-        // identify and store current section, then go to next line
         if (line[0] == '[' && line[strlen(line)-1] == ']') {
             strncpy(current_section, line + 1, sizeof(current_section) - 1);
             current_section[strlen(current_section) - 1] = '\0';
@@ -39,7 +38,6 @@ int load_config(const char* file_name) {
         char* key = line;
         char* value = equals + 1;
 
-        // depending on the current section, check if key matches, then define
         if (strcmp(current_section, "long_function") == 0) {
             if (strcmp(key, "min_LOC") == 0) {
                 global_config.long_function.min_LOC = strtol(value,NULL,10);

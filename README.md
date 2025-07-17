@@ -1,4 +1,4 @@
-# Matlab-Smell-Detector
+# matlab-smell-detector
 
 A small program that utilises tree-sitters syntax trees to search for common Code Smells in Matlab code.
 

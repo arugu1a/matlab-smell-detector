@@ -166,15 +166,15 @@ void find_long_parameter_lists(TSNode root_node, char *file_name, Smell_list *li
     ts_query_delete(query);
 }
 
-static void file_smell_search(TSParser *parser, Matlab_file file, Smell_list *list) {
-    char *source = file.content;
+static void file_smell_search(TSParser *parser, Matlab_file *file, Smell_list *list) {
+    char *source = file->content;
     TSTree *tree = ts_parser_parse_string(parser, NULL, source, strlen(source));
     TSNode root_node = ts_tree_root_node(tree);
 
     // printf("%s", ts_node_string(root_node)); // only for debugging
     // printf("when doing the search, file_name: %s\n", file.file_name);
-    find_long_functions(root_node, file.file_name, list);
-    find_long_parameter_lists(root_node, file.file_name, list);
+    find_long_functions(root_node, file->file_name, list);
+    find_long_parameter_lists(root_node, file->file_name, list);
 
     ts_tree_delete(tree);
 }
@@ -225,7 +225,4 @@ void free_smell_list(Smell_list *list) {
     // list->smells[i].location.file_name belongs to file list,
     // gets freed in free_file_list(File_list *list) in file_utils.c
     free(list->smells);
-    list->smells = NULL;
-    list->capacity = 0;
-    list->count = 0;
 }
