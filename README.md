@@ -15,7 +15,7 @@ To build the program, follow these steps:
 
 ```shell
 # acquire the code (e.g. clone using git)
-git clone <link to repository>
+git clone https://github.com/arugu1a/matlab-smell-detector.git
 
 # move into the repository
 cd matlab-smell-detector
