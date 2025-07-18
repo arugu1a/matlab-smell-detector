@@ -4,7 +4,7 @@ A small program that utilises tree-sitters syntax trees to search for common Cod
 
 ## About
 
-This program recursively searches for all Matlab files in a given directory utilising [tinydir](https://github.com/cxong/tinydir). For every file it constructs its abstract syntax tree (AST) using [tree-sitter](https://github.com/tree-sitter/tree-sitter) and [tree-sitter-matlab](https://github.com/acristoffers/tree-sitter-matlab). Different queries are then performed on the AST to detect patterns associated with smells. The current supported smells are:
+This program recursively searches for all Matlab files in a given directory utilising [tinydir](https://github.com/cxong/tinydir). For every file it constructs its concrete syntax tree using [tree-sitter](https://github.com/tree-sitter/tree-sitter) and [tree-sitter-matlab](https://github.com/acristoffers/tree-sitter-matlab). Different queries are then performed on the tree to detect patterns associated with smells. The current supported smells are:
 
 - Long Function
 - Long Parameter List
