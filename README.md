@@ -1,10 +1,10 @@
 # matlab-smell-detector
 
-A small program that utilises tree-sitters syntax trees to search for common Code Smells in Matlab code.
+A small program that utilises tree-sitters syntax trees to search for common Code Smells in MATLAB code.
 
 ## About
 
-This program recursively searches for all Matlab files in a given directory utilising [tinydir](https://github.com/cxong/tinydir). For every file it constructs its concrete syntax tree using [tree-sitter](https://github.com/tree-sitter/tree-sitter) and [tree-sitter-matlab](https://github.com/acristoffers/tree-sitter-matlab). Different queries are then performed on the tree to detect patterns associated with smells. The current supported smells are:
+This program recursively searches for all MATLAB files in a given directory utilising [tinydir](https://github.com/cxong/tinydir). For every file it constructs its concrete syntax tree using [tree-sitter](https://github.com/tree-sitter/tree-sitter) and [tree-sitter-matlab](https://github.com/acristoffers/tree-sitter-matlab). Different queries are then performed on the tree to detect patterns associated with smells. The current supported smells are:
 
 - Long Function
 - Long Parameter List
@@ -61,7 +61,7 @@ make clean all
 This project uses the following open source libraries:
 
 - [tree-sitter](https://github.com/tree-sitter/tree-sitter) - parser generator tool and an incremental parsing library
-- [tree-sitter-matlab](https://github.com/acristoffers/tree-sitter-matlab) - Matlab grammar for tree-sitter
+- [tree-sitter-matlab](https://github.com/acristoffers/tree-sitter-matlab) - MATLAB grammar for tree-sitter
 - [tinydir](https://github.com/cxong/tinydir) - lightweight directory traversal library
 
 Their respective licences can be found in NOTICE.txt.

@@ -171,7 +171,7 @@ static void file_smell_search(TSParser *parser, Matlab_file *file, Smell_list *l
     TSTree *tree = ts_parser_parse_string(parser, NULL, source, strlen(source));
     TSNode root_node = ts_tree_root_node(tree);
 
-    // printf("%s", ts_node_string(root_node)); // only for debugging
+    printf("%s", ts_node_string(root_node)); // only for debugging
     // printf("when doing the search, file_name: %s\n", file.file_name);
     find_long_functions(root_node, file->file_name, list);
     find_long_parameter_lists(root_node, file->file_name, list);

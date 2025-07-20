@@ -77,6 +77,29 @@ Matlab_file *read_file(const char *file_path) {
 // TODO: - add some kind of limit to search depth,
 // - add error check for path construction
 int load_files(const char *path, File_list *list) {
+    tinydir_file file;
+    if (tinydir_file_open(&file, path) == -1) {
+        perror("tinydir_file_open");
+        return -1;
+    }
+
+    // --- base case: path is file ---
+    if (!file.is_dir) {
+        if (has_m_extension(file.name)) {
+            Matlab_file *matlab_file = read_file(path);
+            if (!matlab_file) {
+                fprintf(stderr, "Failed to read file %s.\n", path);
+                return -1;
+            }
+
+            if (add_matlab_file(matlab_file, list) != 0) {
+                fprintf(stderr, "Failed to allocate additional memory for file list.\n");
+            }
+        }
+        return 0;
+    }
+
+    // --- recursive case: path is directory ---
     tinydir_dir dir;
     if (tinydir_open(&dir, path) == -1) {
         perror("tinydir_open");
@@ -84,34 +107,18 @@ int load_files(const char *path, File_list *list) {
     }
 
     while (dir.has_next) {
-        tinydir_file file;
-        if (tinydir_readfile(&dir, &file) == -1) {
+        tinydir_file child;
+        if (tinydir_readfile(&dir, &child) == -1) {
             tinydir_next(&dir);
             continue;
         }
-        if (file.is_dir) {
-            // if directory isn't current or parent directory, then recursive call
-            if (strcmp(file.name, ".") != 0 && strcmp(file.name, "..") != 0) {
-                char subpath[MAX_PATH_LENGTH];
-                snprintf(subpath, sizeof(subpath), "%s%c%s", path, PATH_SEPARATOR, file.name);
-                load_files(subpath, list);
-            }
-        } else if (has_m_extension(file.name)) {
-            char file_path[MAX_PATH_LENGTH];
-            snprintf(file_path, sizeof(file_path), "%s%c%s", path, PATH_SEPARATOR, file.name);
 
-            Matlab_file *matlab_file = read_file(file_path);
-            if (!matlab_file) {
-                fprintf(stderr, "Failed to read file %s.\n", file_path);
-                tinydir_next(&dir);
-                continue;
-            }
-            
-            if (add_matlab_file(matlab_file, list) != 0) {
-                fprintf(stderr, "Failed to allocate additional memory for file list.\n");
-            }
-            
+        if (strcmp(child.name, ".") != 0 && strcmp(child.name, "..") != 0) {
+            char child_path[MAX_PATH_LENGTH];
+            snprintf(child_path, sizeof(child_path), "%s%c%s", path, PATH_SEPARATOR, child.name);
+            load_files(child_path, list); // recursive call
         }
+
         tinydir_next(&dir);
     }
 
