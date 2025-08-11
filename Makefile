@@ -1,7 +1,7 @@
 CC ?= gcc
 
 # all C files in /src
-SRC = $(wildcard src/*.c)
+SRC = $(wildcard src/*.c) $(wildcard src/detectors/*.c) $(wildcard src/detectors/god_class/*.c)
 
 # third party paths
 TS_DIR = third_party/tree-sitter
@@ -11,9 +11,11 @@ GRAMMAR = third_party/tree-sitter-matlab/src/parser.c third_party/tree-sitter-ma
 GRAMMAR_INC = -Ithird_party/tree-sitter-matlab/src
 TINYDIR_INC = -Ithird_party
 
+PROJECT_INC = -Isrc -Isrc/detectors -Isrc/detectors/god_class
+
 BIN = main
 
-CFLAGS = -std=c11 -O2 $(TS_INC) $(TINYDIR_INC) $(GRAMMAR_INC)
+CFLAGS = -std=c11 -O2 $(TS_INC) $(TINYDIR_INC) $(GRAMMAR_INC) $(PROJECT_INC)
 LDFLAGS = $(TS_LIB)
 
 .PHONY: all

@@ -1,5 +1,6 @@
 #include "tinydir.h"
 #include "file_utils.h"
+#include "detector_registry.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,10 +15,70 @@
 // is this the right way of defining constants?
 #define INITIAL_FILE_CAPACITY 10
 #define MAX_PATH_LENGTH 4096
+#define NUM_SMELLS 3
 
 static int has_m_extension(const char* file_name) {
     const char* file_extension = strrchr(file_name, '.');
     return file_extension && strcmp(file_extension, ".m") == 0;
+}
+
+int load_config(const char* file_name, Smell_detector **detectors, size_t detector_count) {
+    FILE* file = fopen(file_name, "r");
+    if (!file) {
+        fprintf(stderr, "Error: Cannot open config file.\n");
+        return -1;
+    }
+    
+    char line[256];
+    char current_section[128] = "";
+    
+    while (fgets(line, sizeof(line), file)) {
+        line[strcspn(line, "\n")] = '\0';
+        if (line[0] == '\0' || line[0] == '#') {
+            continue;
+        }
+        
+        if (line[0] == '[' && line[strlen(line)-1] == ']') {
+            strncpy(current_section, line + 1, sizeof(current_section) - 1);
+            current_section[strlen(current_section) - 1] = '\0';
+            continue;
+        }
+        
+        // split the line into key and value by replacing '=' with '\0'
+        char* equals = strchr(line, '=');
+        if (!equals) continue;
+        *equals = '\0';
+        char* key = line;
+        char* value = equals + 1;
+
+        for (size_t i = 0; i < detector_count; i++) {
+            if (strcmp(detectors[i]->name, current_section) == 0) {
+                for (size_t j = 0; j < detectors[i]->config_count; j++) {
+                    Configuration *config = &detectors[i]->configs[j];
+                    
+                    if (strcmp(config->key_absolute, key) == 0) {
+                        if (config->absolute_is_float) {
+                            config->absolute_value.float_absolute = strtof(value, NULL);
+                        } else {
+                            config->absolute_value.int_absolute = strtol(value, NULL, 10);
+                        }
+                        break;
+                    }
+                    else if (strcmp(config->key_percentage, key) == 0) {
+                        config->percentage_value = strtof(value, NULL);
+                        break;
+                    }
+                    else if (strcmp(config->key_use_percentage, key) == 0) {
+                        config->use_percentage = strtol(value, NULL, 10);
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+    }
+    fclose(file);
+    return 0;
 }
 
 Matlab_file *read_file(const char *file_path) {
@@ -126,45 +187,51 @@ int load_files(const char *path, File_list *list) {
     return 0;
 }
 
-void write_smell_csv_row(FILE *file, const Smell *smell) {
+static void write_smell_csv_row(FILE *file, const Smell *smell, const char *detector_name) {
     fprintf(file, "%s,\"%s\",%d",
-            smell_type_to_str(smell->type),
+            detector_name,
             smell->location.file_name,
             smell->location.line);
-
-    for (size_t violation_i = 0; violation_i < MAX_VIOLATIONS; ++violation_i) {
-        if (violation_i < smell->violation_count) {
-            const Violation *violation = &smell->violations[violation_i];
-            fprintf(file, ",%s,%d,%d",
-                    violation_type_to_str(violation->type),
-                    violation->actual_value,
-                    violation->threshold_value);
+    for (size_t metric_i = 0; metric_i < MAX_METRICS; ++metric_i) {
+        if (metric_i < smell->metric_count) {
+            const Metric *metric = &smell->metrics[metric_i];
+            if (metric->is_float) {
+                fprintf(file, ",%s,%.2f",
+                        metric->name,
+                        metric->measured_value.float_value);
+            } else {
+                fprintf(file, ",%s,%d",
+                        metric->name,
+                        metric->measured_value.int_value);
+            }
         } else {
-            fprintf(file, ",,,");
+            fprintf(file, ",,");
         }
     }
     fprintf(file, "\n");
 }
 
-void smell_list_to_CSV(Smell_list *list) {
-    if (!list || list->count == 0) return;
+static void single_list_to_CSV(FILE *file, Smell_list *list, const char *detector_name) {
+    for (size_t smell_i = 0; smell_i < list->count; ++smell_i) {
+        write_smell_csv_row(file, &list->smells[smell_i], detector_name);
+    }
+}
 
+void smell_lists_to_CSV() {
     FILE *file = fopen("output.csv", "w");
     if (!file) {
         perror("output.csv");
         return;
     }
-
     fprintf(file, "smell_type,file_name,line");
-    for (int violation_i = 0; violation_i < MAX_VIOLATIONS; ++violation_i) {
-        fprintf(file, ",violation%d_type,violation%d_actual,violation%d_threshold",
-                violation_i + 1, violation_i + 1, violation_i + 1);
+    for (int metric_i = 0; metric_i < MAX_METRICS; ++metric_i) {
+        fprintf(file, ",metric%d_name,metric%d_measured_value",
+                metric_i + 1, metric_i + 1);
     }
     fprintf(file, "\n");
-
-    for (size_t smell_i = 0; smell_i < list->count; ++smell_i) {
-        write_smell_csv_row(file, &list->smells[smell_i]);
+    
+    for (size_t list_i = 0; list_i < detector_count; ++list_i) {
+        single_list_to_CSV(file, detectors[list_i]->smell_list, detectors[list_i]->name);
     }
-
     fclose(file);
 }
